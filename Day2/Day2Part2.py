@@ -1,6 +1,6 @@
 # -----------------------
 #   Advent of Code 2021
-#   Day 2 Part 1
+#   Day 2 Part 2
 #   Author: James Hess
 # -----------------------
 
