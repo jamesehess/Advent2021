@@ -1,12 +1,12 @@
 # -----------------------
 #   Advent of Code 2021
-#   Day 15 Part 2
+#   Day 15 Part 1
 #   Author: James Hess
 # -----------------------
 
 import math
 
-tempGrid = []
+weightGrid = []
 # Parse puzzle input file and store necessary data in list
 with open("Day15Input.txt") as file:
     lines = file.readlines()
@@ -14,7 +14,7 @@ with open("Day15Input.txt") as file:
         tempList = []
         for char in line.strip():
             tempList.append(int(char))
-        tempGrid.append(tempList)
+        weightGrid.append(tempList)
 
 maxY = len(weightGrid)
 maxX = len(weightGrid[0])
