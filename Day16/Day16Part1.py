@@ -17,55 +17,76 @@ binInput = bin(int(hexInput, 16))[2:].zfill(len(hexInput)*4)
 
 versions = []
 
-print("Binary Input: " + binInput)
+#print("Binary Input: " + binInput)
 
-def lengthSubDecoder(length,packet):
-    # trim packet to length
-    packet = packet[:length]
+def literaldecorder(packet):
+    groupCount = 0
+    litEnd = 1
+    litBinary = ''
+    while litEnd == 1:
+        literalGroup = packet[0:5]
+        litBinary = litBinary + literalGroup[1:]
+        litEnd = int(literalGroup[0])
+        packet = packet[5:]
+        groupCount += 1
+    litDecimal = int(litBinary, 2)
+    print("Literal Value: " + str(litDecimal))
+    #print("Consumed: " + str(groupCount * 5))
+    return groupCount * 5
 
-def countSubDecoder(count,packet):
-    test=1
+def operatordecorder(packet):
+    lengthTypeID = int(packet[0])
+    print("Length Type ID: " + str(lengthTypeID), end='')
+    # if operator packet is type total Length in bits
+    if lengthTypeID == 0:
+        print(" (length in bits)")
+        totalLength = int(packet[1:16], 2)
+        print("Sub-packets Total Length: " + str(totalLength), end='; ')
+        remainPacket = packet[16:]
+        print("Remaining Packet: " + remainPacket)
+        decoder(remainPacket, 'length', totalLength)
+        return remainPacket, totalLength
 
-def decoder(packet):
-    # Extract version, type, and contents
-    version = int(packet[:3], 2)
-    typeID = int(packet[3:6], 2)
-    packet = binInput[6:]
+    # if operator packet is type Count of sub-packets
+    elif lengthTypeID == 1:
+        print(" (number of sub packets)")
+        countPackets = int(packet[1:12], 2)
+        print("Sub-packets Count: " + str(countPackets), end='; ')
+        remainPacket = packet[12:]
+        print("Remaining Packet: " + remainPacket)
+        totalConsumed = decoder(remainPacket, 'count', countPackets)
+        return remainPacket, totalConsumed
 
-    print("Version: " + str(version), end='; ')
-    print("Type ID: " + str(typeID), end='; ')
-    print("Packet: " + packet)
+def decoder(packet,subtype,subcount=1):
+    print("###")
+    consumed = 0
+    totConsumed = 0
+    while subcount > 0:
+        packet = packet[consumed:]
+        print("packet: " + packet + "; subtype: " + subtype + "; subcount: " + str(subcount))
+        # Extract version, type, and packet contents
+        version = int(packet[:3], 2)
+        typeID = int(packet[3:6], 2)
+        packet = packet[6:]
 
-    # if packet is type literal
-    if typeID == 4:
-        litEnd = 1
-        litBinary = ''
-        while litEnd == 1:
-            literalGroup = packet[0:5]
-            litBinary = litBinary + literalGroup[1:]
-            litEnd = int(literalGroup[0])
-            packet = packet[5:]
-        litDecimal = int(litBinary, 2)
-        print("Literal Value: " + str(litDecimal))
+        print("Version: " + str(version), end='; ')
+        print("Type ID: " + str(typeID), end='; ')
+        print("Packet: " + packet)
 
-    # if packet is type operator
-    else:
-        lengthTypeID = int(packet[0])
-        print("Length Type ID: " + str(lengthTypeID), end='')
-        # if operator packet is type total length in bits
-        if lengthTypeID == 0:
-            print(" (length in bits)")
-            totalLength = int(packet[1:16],2)
-            print("Sub-packets Total Length: " + str(totalLength), end='; ')
-            remainPacket = packet[16:]
-            print("Remaining Packet: " + remainPacket)
-            lengthSubDecoder(totalLength, remainPacket)
-        # if operator packet is type number of sub-packets
-        elif lengthTypeID == 1:
-            print(" (number of sub packets)")
-            countPackets = int(packet[1:12],2)
-            print("Sub-packets Count: " + str(countPackets), end='; ')
-            remainPacket = packet[12:]
-            print("Remaining Packet: " + remainPacket)
-            countSubDecoder(countPackets, remainPacket)
-decoder(binInput)
+        versions.append(version)
+
+        if typeID == 4:  # if packet is type literal
+            consumed = literaldecorder(packet)
+        else:  # if packet is type operator
+            packet, consumed = operatordecorder(packet)
+
+        if subtype == 'main' or subtype == 'count':
+            subcount -= 1
+        elif subtype == 'length':
+            subcount -= consumed + 6
+        totConsumed += consumed
+    return totConsumed
+
+decoder(binInput,'main')
+print(versions)
+print(sum(versions))
